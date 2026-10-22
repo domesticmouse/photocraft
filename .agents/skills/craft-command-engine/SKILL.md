@@ -1,15 +1,32 @@
 ---
 name: craft-command-engine
 description: >-
-  Use this skill when exploring, tracing, adding, or modifying user-visible
-  commands, wiring menu items, implementing schema-driven dialogs, exposing
-  actions to the CLI/MCP server/JSON control channel, or writing panic_hunt
-  fuzz tests in a PhotoCraft-style application.
+  Use this skill when exploring, explaining, tracing, adding, or modifying
+  commands in PhotoCraft's command architecture: understanding the three-tier
+  command taxonomy (Engine CommandSpecs, Shell/Tool commands, and Automation
+  transports), locating which *_cmds.rs module owns a command, wiring menu
+  items, implementing schema-driven dialogs, or writing panic_hunt fuzz tests.
 ---
 
 # Engine-First Command Architecture & Automation
 
-In a PhotoCraft-style application, **everything is a command**. The GUI, headless CLI, JSON TCP control channel, recorded Actions, and MCP server (`rmcp`) all dispatch commands through `Session::execute(id, params)` in `crates/engine`.
+In PhotoCraft, **everything is a command**. All 631 of 631 Photoshop menu items across the 10 top-level menus (`File`, `Edit`, `Image`, `Layer`, `Type`, `Select`, `Filter`, `View`, `Window`, `Help`), plus tool gestures, panel actions, and queries, flow through a unified command architecture in `crates/engine` and `crates/ui-egui`.
+
+## Three-Tier Command Taxonomy
+
+1. **Engine Commands (`CommandSpec` in `crates/engine/src/commands.rs` + `*_cmds.rs`):**
+   - Dispatched via `Session::execute(id, params)` (synchronous) or `Session::start(id, params)` (background jobs in `jobs.rs`).
+   - Includes state-mutating commands (`journal: true`, recorded in History via `Session::edit` and in Actions) and read-only queries (`journal: false`, e.g. `session.inspect`, `document.inspect`, `document.pixel`, `command.list`, `job.status`).
+   - Adjustment commands are generated in pairs from a single `ADJ` table in `commands.rs`: destructive (`image.adjustments.<kind>`) and non-destructive adjustment layers (`layer.newAdjustmentLayer.<kind>`).
+   - For the complete domain-by-domain map of all ~85 command modules in `crates/engine/src/`, read [command-catalog-by-module.md](./references/command-catalog-by-module.md).
+2. **Shell & Tool Commands (`crates/engine/src/shell_commands.rs` & `crates/ui-egui/src/menus.rs`):**
+   - Pure UI/window/view actions (`SHELL_COMMANDS`, re-exported as `menus::UI_COMMANDS`) and the 67 toolbar tool-selection commands (`TOOLS`, `tools.select.<tool>`).
+   - Declared in `crates/engine/src/shell_commands.rs` so headless sessions know every bindable shortcut ID for `Edit › Keyboard Shortcuts` (`.kys` import/export and conflict detection), and executed by `crates/ui-egui/src/menus.rs::invoke`.
+   - `menus::invoke` also intercepts interactive menu clicks (e.g., `file.new` or `layer.duplicate` with empty params, or filters needing dialogs) to open UI dialogs/file pickers before delegating to `Session::execute`.
+3. **Transport & Automation Protocol Commands (`crates/automation` & `crates/ui-egui/src/control.rs`):**
+   - External drivers wrap the engine registry: CLI (`photocraft-cli commands` / `run`), headless JSON-RPC (`photocraft-cli serve`: `engine.execute`, `engine.commands`, `doc.*`), MCP server (`command_list`, `command_run`, `command_batch`, `doc_inspect`, `doc_render_preview`), and the live GUI TCP control channel (`--control`: `command.run`, `command.list`, `ui.inspect`, `ui.screenshot`, `ui.pointer`, `ui.key`, `ui.menu.invoke`).
+
+---
 
 ## Step-by-Step Checklist: Adding a Command
 
