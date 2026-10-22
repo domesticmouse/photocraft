@@ -1,11 +1,11 @@
 ---
 name: craft-cow-document-model
 description: >-
-  Use this skill when designing or modifying the document model, tiled pixel
-  surfaces, undo/redo history, or native file persistence (.pcraft) in a
-  PhotoCraft-style application (runtime PixelFormat, sparse Arc-shared 256x256
-  copy-on-write tiles, O(1) snapshot history, and compile-time complete
-  content-addressed serialization).
+  Use this skill when exploring, understanding, designing, or modifying the
+  document model, tiled pixel surfaces, undo/redo history, or native file
+  persistence (.pcraft) in a PhotoCraft-style application (runtime PixelFormat,
+  sparse Arc-shared 256x256 copy-on-write tiles, O(1) snapshot history, and
+  compile-time complete content-addressed serialization).
 ---
 
 # Copy-on-Write Tiled Document Model, History & Native Format

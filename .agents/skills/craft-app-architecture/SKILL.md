@@ -1,10 +1,10 @@
 ---
 name: craft-app-architecture
 description: >-
-  Use this skill when scaffolding, structuring, or auditing a multi-crate Rust
-  application in the style of PhotoCraft (strict L0–L7 dependency layering,
-  xtask layer enforcement, panic-free/unsafe-free lint gates, and Cargo profile
-  tuning for native + WebAssembly targets).
+  Use this skill when exploring, understanding, scaffolding, structuring, or
+  auditing a multi-crate Rust application in the style of PhotoCraft (strict
+  L0–L7 dependency layering, xtask layer enforcement, panic-free/unsafe-free
+  lint gates, and Cargo profile tuning for native + WebAssembly targets).
 ---
 
 # Craft-Style Application Architecture (`L0`–`L7`)

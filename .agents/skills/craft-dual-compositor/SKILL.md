@@ -1,10 +1,10 @@
 ---
 name: craft-dual-compositor
 description: >-
-  Use this skill when working on layer compositing, blend modes, adjustment
-  layers, layer effects, GPU rendering (wgpu), ICC display color management
-  (GPU matrix/TRC shaper curves and 3D LUTs), or CPU/GPU and corpus parity
-  tests in a PhotoCraft-style application.
+  Use this skill when exploring, understanding, or working on layer
+  compositing, blend modes, adjustment layers, layer effects, GPU rendering
+  (wgpu), ICC display color management (GPU matrix/TRC shaper curves and 3D
+  LUTs), or CPU/GPU and corpus parity tests in a PhotoCraft-style application.
 ---
 
 # Dual CPU/GPU Compositing, ICC Color & Oracle Parity

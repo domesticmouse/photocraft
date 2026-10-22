@@ -59,7 +59,9 @@ A pixel/filter command's `run` implementation should check:
 
 Because `Session::execute(&mut self, id: &str, params: Value) -> Result<Value>` is the single entry point:
 - **GUI (`photocraft-ui-egui`):** Menu items, toolbar buttons, and shortcuts invoke `session.execute(id, params)`.
-- **Headless CLI (`apps/photocraft-cli`):** `photocraft-cli run in.psd --cmd <id> --params '<json>' --out out.png` runs without a display server.
-- **Headless JSON-RPC (`photocraft-cli rpc`, `crates/automation/src/rpc.rs`):** Persistent newline-delimited JSON-RPC over stdio without MCP framing (`engine.execute`, `doc.open`, `doc.save`, `doc.render`, `batch`; passing `index` on `doc.*` methods targets that document for a single call without changing the active document).
+- **Headless CLI (`apps/photocraft-cli`):**
+  - `photocraft-cli commands [--json] [--filter <text>]` lists and searches registered commands and parameter schemas.
+  - `photocraft-cli run in.psd --cmd <id> --params '<json>' --out out.png` runs without a display server.
+- **Headless JSON-Lines Server (`photocraft-cli serve`, `crates/automation/src/rpc.rs`):** Persistent newline-delimited JSON-RPC over stdio or loopback TCP (`--port <port>`) without MCP framing (`engine.execute`, `engine.commands`, `doc.open`, `doc.save`, `doc.inspect`, `doc.render`, `batch`; passing `index` on `doc.*` methods targets that document for a single call without changing the active document).
 - **TCP Control Server (`ui-egui/src/control.rs`):** Accepts authenticated JSON-lines requests (`command.run`, `ui.inspect`, `ui.screenshot`, `ui.pointer`, `ui.gpu.simulateLoss`) to drive and visually verify a live app instance.
 - **MCP Server (`crates/automation`):** Wraps `Session` (or bridges to a running GUI over TCP) with capability-restricted filesystem roots (`cap-std` via `AuthorizedWorkspace`), exposing `command_list`, `command_run`, `command_batch`, `doc_inspect`, and `doc_render_preview`.

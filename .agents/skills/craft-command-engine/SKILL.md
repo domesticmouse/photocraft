@@ -1,10 +1,10 @@
 ---
 name: craft-command-engine
 description: >-
-  Use this skill when adding or modifying user-visible commands, wiring menu
-  items, implementing schema-driven dialogs, exposing actions to the CLI/MCP
-  server/JSON control channel, or writing panic_hunt fuzz tests in a
-  PhotoCraft-style application.
+  Use this skill when exploring, tracing, adding, or modifying user-visible
+  commands, wiring menu items, implementing schema-driven dialogs, exposing
+  actions to the CLI/MCP server/JSON control channel, or writing panic_hunt
+  fuzz tests in a PhotoCraft-style application.
 ---
 
 # Engine-First Command Architecture & Automation
