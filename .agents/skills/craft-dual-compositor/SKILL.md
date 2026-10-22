@@ -3,8 +3,8 @@ name: craft-dual-compositor
 description: >-
   Use this skill when working on layer compositing, blend modes, adjustment
   layers, layer effects, GPU rendering (wgpu), ICC display color management
-  (3D LUTs), or CPU/GPU and PSD corpus parity tests in a PhotoCraft-style
-  application.
+  (GPU matrix/TRC shaper curves and 3D LUTs), or CPU/GPU and corpus parity
+  tests in a PhotoCraft-style application.
 ---
 
 # Dual CPU/GPU Compositing, ICC Color & Oracle Parity
@@ -14,20 +14,20 @@ This skill guides work across `L0` (`cms`, `color`), `L3` (`compose`, `gpu`), an
 ## Core Design Principles
 
 1. **CPU Compositor First (The Oracle):**
-   - [`photocraft-compose`](file:///Users/brett/Documents/GitHub/photocraft/crates/compose/src/lib.rs) is the authoritative reference implementation of Photoshop layer semantics: 27+ blend modes, opacity vs. fill opacity, clipping groups, pass-through vs. isolated groups, raster/vector/filter masks, `BlendIf` ranges, knockout, layer effects (`lfx2`), and adjustment layers.
+   - `photocraft-compose` (`crates/compose/src/lib.rs`) is the authoritative reference implementation of Photoshop layer semantics: 27+ blend modes, opacity vs. fill opacity, clipping groups, pass-through vs. isolated groups, raster/vector/filter masks, `BlendIf` ranges, knockout, layer effects (`lfx2`), and adjustment layers.
    - It composites `Rect` regions in independent 256×256 tiles in parallel using `rayon` on native targets (and single-threaded on `wasm32`).
    - It caps single-call buffer allocations (`MAX_RENDER_PIXELS = 1 << 30`) so hostile canvas sizes (up to 300,000×300,000 px) never abort the process.
 2. **GPU Compositor Matched Within $\le 1/255$:**
-   - [`photocraft-gpu`](file:///Users/brett/Documents/GitHub/photocraft/crates/gpu/src/lib.rs) executes the same compositing semantics on `wgpu` using `rgba16float`/`rgba32float` accumulators and a tile residency cache keyed by `(TileId, generation)`.
+   - `photocraft-gpu` (`crates/gpu/src/lib.rs`) executes the same compositing semantics on `wgpu` using `rgba16float`/`rgba32float` accumulators and a tile residency cache keyed by `(TileId, generation)`.
    - Every blend mode, adjustment, and layer effect in `photocraft-gpu` must pass automated parity tests asserting output within $\le 1/255$ of `photocraft-compose`.
 3. **End-to-End ICC Color Management (`photocraft-cms`):**
    - Never assume sRGB. Document working spaces (RGB, Gray, CMYK, Lab) are carried by ICC profiles (`photocraft-cms`).
-   - Display color management (`engine/src/display_color.rs`) transforms from the document profile to the active monitor's ICC profile (with relative colorimetric intent, Black Point Compensation, Proof Colors, and Gamut Warning).
-   - On the GPU canvas, the display transform is baked into a **33³ 3D LUT** applied in the final shader pass; on the CPU canvas, it runs through `photocraft-cms`'s cached transform (`transform::cached`).
+   - Display color management (`crates/engine/src/display_color.rs`) transforms from the document profile to the active monitor's ICC profile (with relative colorimetric intent, Black Point Compensation, Proof Colors, and Gamut Warning).
+   - On the GPU canvas, RGB matrix/TRC transforms use **accurate float matrix/shaper stages** (`Transform::gpu_matrix_shaper()` in `crates/cms/src/gpu_matrix_shaper.rs`: 4097-entry input curves, 3×3 matrix + offsets, and 4096-entry output curves indexed by $x^{1/4}$ to preserve near-black shadow detail), falling back to a **33³ 3D LUT** for LUT-based profiles, soft-proofing, or Gamut Warning; on the CPU canvas, it runs through `photocraft-cms`'s cached 8-bit transform (`transform::cached`).
 4. **Damage-Driven Partial Redraws:**
    - Never recomposite or scan a full surface per frame. Use `DocState::last_damage` (`Option<Rect>`) and `DocState::revision` / `view_revision` to re-render only the tiles touched since the previous frame.
-5. **PSD Merged Composite Oracle Testing:**
-   - Real Photoshop-authored PSD files store Photoshop's own flattened composite in `image_data`. Corpus tests render the imported `Document` layer tree with `photocraft-compose` and diff against the PSD's embedded composite.
+5. **External Format & Merged Composite Oracle Testing:**
+   - Real Photoshop-authored PSD files (`corpus/photoshop/`, `corpus/psd/`, `corpus/psd-tools/`) and GIMP 3.2.6 XCF files (`corpus/gimp/`) store reference merged composites. Corpus tests render the imported `Document` layer tree with `photocraft-compose` and diff against the reference composite.
 
 ---
 

@@ -41,7 +41,34 @@ strip = "debuginfo"
 [profile.wasm-release.package."*"]
 opt-level = "s"
 
-# Keep hot pixel-processing crates at opt-level 3 even in wasm-release:
+# Decoding and vector rasterization keep their speed at "s":
+[profile.wasm-release.package.photocraft-codecs]
+opt-level = "s"
+[profile.wasm-release.package.photocraft-raw]
+opt-level = "s"
+[profile.wasm-release.package.photocraft-heif]
+opt-level = "s"
+[profile.wasm-release.package.photocraft-vector]
+opt-level = "s"
+
+# Large crates off the per-frame path (doc model, format parsers, UI toolkit, shader/SVG parsers)
+# use "z" to stay under the 24 MiB WebAssembly upload budget:
+[profile.wasm-release.package.photocraft-doc]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-psd]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-format]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-affinity]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-cms]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-compose]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-algo]
+opt-level = "z"
+
+# Hot pixel-processing and brush crates stay at opt-level 3 even in wasm-release:
 [profile.wasm-release.package.photocraft-raster]
 opt-level = 3
 [profile.wasm-release.package.photocraft-color]
@@ -77,7 +104,7 @@ allow-indexing-slicing-in-tests = true
 
 ## 3. Layering Rules Model (`xtask/src/layers.rs`)
 
-See [`xtask/src/layers.rs`](file:///Users/brett/Documents/GitHub/photocraft/xtask/src/layers.rs) for the complete implementation. Its core model classifies every crate into:
+See `xtask/src/layers.rs` for the complete implementation. Its core model classifies every crate into:
 
 ```rust
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -96,6 +123,6 @@ pub enum Class {
 Key checks performed by `check(crates: &[Crate]) -> Vec<Violation>`:
 - **`Violation::Unregistered`**: Every workspace member must appear in `TABLE`.
 - **`Violation::Upward`**: `to >= from` unless `to == from && intra_layer_allowed(from, to)`.
-- **`Violation::StandaloneHasWorkspaceDep`**: A `Class::Standalone` crate cannot depend on any workspace crate.
+- **`Violation::StandaloneHasWorkspaceDep`**: A `Class::Standalone` crate cannot depend on any workspace crate unless listed in `STANDALONE_EXCEPTIONS` (`&[("codecs", "heif")]`).
 - **`Violation::TestkitAsNormalDep`**: `testkit` is only allowed when `DepKind::Dev`.
 - **`Violation::UiBelowL6`**: Any crate with `layer < 6` depending on `["egui", "eframe", "winit", "egui_kittest", "craft-ui", "rfd", "bevy*"]` is rejected.

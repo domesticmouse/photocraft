@@ -26,7 +26,7 @@ This skill covers how data is stored, mutated, undone, and persisted across `L0`
    - `History` (`crates/ops`) stores `VecDeque<HistoryState>` where each `HistoryState` holds `Arc<Document>` plus `LayerTarget` (the active and selected layers when the state was created).
    - Memory is bounded by `max_states` and `max_bytes` (counting unique `Arc<Tile>` addresses via `Arc::as_ptr`).
 4. **Compile-Time Complete Native Format (`.pcraft`):**
-   - `crates/format` serializes `Document` into a ZIP/directory bundle with `manifest.json` + content-addressed `tiles/<blake3>.zst`.
+   - `crates/format` serializes `Document` into a ZIP/directory bundle with `manifest.json` + content-addressed `tiles/<blake3>.zst` (including sample depth in tile hash identity and reusing a per-document save writer with a bounded 64 MiB compressed-payload cache across repeated/small-edit saves).
    - Struct conversions in `crates/format/src/convert.rs` deliberately destructure `photocraft-doc` structs **without `..`** so adding a field to `doc` fails compilation until `format` (with `#[serde(default)]`) and `io` (if PSD-mapped) handle it.
 
 ---

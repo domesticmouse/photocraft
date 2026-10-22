@@ -14,9 +14,9 @@ This skill guides you through setting up and maintaining a pure-Rust, engine-fir
 ## Architectural Principles
 
 1. **Strict Acyclic Layering (`L0`–`L7`):** Every workspace crate is assigned a layer in `xtask/src/layers.rs`. A crate at layer $N$ may only depend on crates in layers $< N$ (plus explicit intra-layer chains).
-2. **Standalone Format & Hardware Crates:** Parsers/encoders (`psd`, `codecs`, `raw`, `heif`, `affinity`) and isolated OS helpers (`tablet`, `ipp`) are classified as `Standalone` at `L0` and must have **zero workspace dependencies** so they remain independently publishable.
+2. **Standalone Format & Hardware Crates:** Parsers/encoders (`psd`, `codecs`, `raw`, `heif`, `affinity`, `adobe-assets`) and isolated OS helpers (`tablet`, `ipp`) are classified as `Standalone` at `L0` and must have **zero workspace dependencies** so they remain independently publishable (with the single explicit `STANDALONE_EXCEPTIONS` entry `("codecs", "heif")` behind `codecs`'s optional `heif` feature).
 3. **UI Containment (`L6+` only):** No crate below `L6` may depend on UI or windowing crates (`egui`, `eframe`, `winit`, `rfd`, `craft-ui`, `bevy*`). `L0`–`L5` must compile headlessly and for `wasm32-unknown-unknown`.
-4. **Never Crash (No Panic, No Unsafe):** Workspace-wide `unsafe_code = "forbid"` and `#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]` on every library and binary crate.
+4. **Never Crash (No Panic, No Unsafe):** Workspace-wide `unsafe_code = "forbid"` and `#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]` on every library and binary crate. The sole isolated exception is `photocraft-tablet` (`crates/tablet`, `unsafe_code = "deny"` crate-wide), where `src/macos.rs` (AppKit `NSEvent` monitor) and `src/windows.rs` (`GetPointerPenInfo` barrel-button hook) allow `unsafe` with `SAFETY:` comments and platform tests; its X11 path and mapping code are safe.
 
 ---
 
@@ -27,14 +27,14 @@ This skill guides you through setting up and maintaining a pure-Rust, engine-fir
 Structure the repository into `crates/*`, `apps/*`, and `xtask`:
 
 - **`L0` Foundation:** `geom` (points, rects, affine, tile coords) $\to$ `cms` (ICC color management) $\to$ `color` (pixel formats, blend math) $\to$ `raster` (sparse copy-on-write tiled surfaces).
-- **`L0` Standalone:** Format parsers/writers (`psd`, `codecs`, `raw`) with no workspace dependencies.
+- **`L0` Standalone:** Format parsers/writers (`psd`, `codecs`, `raw`, `heif`, `affinity`, `adobe-assets`) and OS helpers (`tablet`, `ipp`) with no workspace dependencies.
 - **`L1` Document Model:** `doc` — pure serializable data structures (layer tree, masks, effects, metadata). No rendering or UI logic.
 - **`L2` Operations & Algorithms:** `ops` (undo/redo history), `algo` (filters/adjustments), `paint` (brush engine), `text` (shaping/rasterization), `vector` (paths/coverage).
 - **`L3` Rendering & Native Format:** `compose` (CPU reference compositor), `gpu` (`wgpu` compositor), `format` (content-addressed native bundle).
-- **`L4` I/O & Sandboxed Plugins:** `io` (maps standalone formats $\leftrightarrow$ `doc::Document`), `plugins` (`wasmi` sandboxed Wasm filters).
+- **`L4` I/O & Sandboxed Plugins:** `io` (maps standalone formats and XCF $\leftrightarrow$ `doc::Document`), `plugins` (`wasmi` sandboxed Wasm filters).
 - **`L5` Engine Façade:** `engine` (`Session`, `CommandSpec` registry, background `Jobs`, `Preferences`).
-- **`L6` Shells & Automation:** `ui-egui` (thin `egui` frontend + JSON control protocol), `automation` (`rmcp` MCP server).
-- **`L7` Binaries (`Exempt`):** `apps/<app>` (desktop), `apps/<app>-cli` (headless CLI + MCP host), `apps/<app>-web` (browser Wasm), `xtask`.
+- **`L6` Shells & Automation:** `ui-egui` (thin `egui` frontend + JSON control protocol), `automation` (`rmcp` MCP server + headless JSON-RPC).
+- **`L7` Binaries (`Exempt`):** `apps/<app>` (desktop), `apps/<app>-cli` (headless CLI + MCP/RPC host), `apps/<app>-web` (browser Wasm), `apps/<app>-web-boot` (loads compressed Wasm chunks under host file-size caps), `xtask`.
 
 ### 2. Configure Workspace Lints and Cargo Profiles
 

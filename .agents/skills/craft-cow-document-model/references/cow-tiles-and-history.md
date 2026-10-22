@@ -93,7 +93,8 @@ pub fn edit<R>(
 
 ## 4. Content-Addressed Native Bundle (`crates/format`)
 
-- Each tile's raw bytes are hashed with `blake3`.
+- Each tile's raw bytes (together with its sample depth) are hashed with `blake3`.
 - Tile data is compressed with Zstandard (`ruzstd` for pure-Rust decoding on native + wasm) and stored at `tiles/<blake3_hex>.zst`.
 - `manifest.json` references tiles by their `<blake3_hex>` digest. Identical tiles (e.g., solid fill regions or duplicated layers) are stored once.
+- **Save Writer Reuse:** Each open document can retain a `format` writer across saves so unchanged tile and blob identities reuse weakly cached hashes and compressed payloads (bounded to 64 MiB in the UI), cutting repeated and small-edit save times by 20–34%. Fallible in-place edits move uniquely owned tile pixels when only weak cache references remain, while shared tiles keep copy-on-write behavior.
 - Native saves write to a temporary file/directory and atomically replace the destination while preserving OS metadata (POSIX permissions, macOS ACLs via `exacl`, Windows DACLs and Alternate Data Streams via `winsafe::ReplaceFileW`).
