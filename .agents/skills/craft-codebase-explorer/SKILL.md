@@ -10,7 +10,7 @@ description: >-
 
 # Exploring & Understanding the PhotoCraft Codebase
 
-PhotoCraft is a native, pure-Rust, Photoshop-comparable image editor (~540k LoC across 25 library crates, 4 apps, and `xtask`). Every user-visible action flows through a single command engine (`crates/engine`), and strict `L0`–`L7` acyclic layering keeps the core independent of the `egui`/`wgpu` UI shell.
+PhotoCraft is a native, pure-Rust, Photoshop-comparable image editor (~629k LoC across 26 library crates, 4 apps, and `xtask`, with ~9,900 `#[test]` functions). Every user-visible action flows through a single command engine (`crates/engine`), and strict `L0`–`L7` acyclic layering keeps the core independent of the `egui`/`wgpu` UI shell.
 
 ---
 
@@ -22,7 +22,7 @@ Start with the authoritative root and `docs/` guides depending on the question:
 |---|---|
 | High-level rules, golden rules ("Never crash"), workflow | `AGENTS.md` |
 | Crate dependency graph, engine/UI seam, design history | `docs/architecture.md` and `xtask/src/layers.rs` |
-| Building, fast test loops (`nextest`), logs, env vars, corpora | `docs/development.md` |
+| Building, fast test loops (`nextest`), logs, env vars, corpora | `docs/development.md` (and the `craft-testing-infrastructure` skill) |
 | How to add a command, clean-room & safety rules | `docs/contributing.md` |
 | Driving & screenshotting a live or headless instance via JSON | `docs/control-protocol.md` |
 | Design tokens, themes, widgets, matching Photoshop's UI | `docs/ui-design.md` |
@@ -34,7 +34,7 @@ Start with the authoritative root and `docs/` guides depending on the question:
 
 ## 2. Where to Find Things (`L0`–`L7` Quick Lookup)
 
-For a complete file-by-file breakdown of all 25 crates and 4 apps, read [crate-and-module-atlas.md](./references/crate-and-module-atlas.md).
+For a complete file-by-file breakdown of all 26 library crates and 4 apps, read [crate-and-module-atlas.md](./references/crate-and-module-atlas.md).
 
 - **Geometry, ICC Color, Pixel Math, COW Tiles (`L0`):** `crates/geom`, `crates/cms`, `crates/color`, `crates/raster`
 - **Standalone File Parsers & OS Helpers (`L0 Standalone`, zero workspace deps):**

@@ -81,9 +81,9 @@ This reference maps every crate and application in the PhotoCraft workspace to i
 
 | Crate | Path | Key Types & Responsibilities |
 |---|---|---|
-| `photocraft-ui-egui` | `crates/ui-egui/src/lib.rs` | Thin `egui`/`eframe` shell: `state.rs` (`UiState`, serializable), `menu_catalog.rs` (628 Photoshop menu items $\to$ command IDs), `menus.rs`, `canvas.rs` (viewport, overlays, GPU/CPU presentation), `panels.rs` & `dock.rs`, `dialogs.rs` & `filter_dialog.rs` (schema-driven filter previews), `theme.rs` (`Tokens`), `i18n.rs` (`tl!` macro), `control.rs` (TCP JSON control server). |
+| `photocraft-ui-egui` | `crates/ui-egui/src/lib.rs` | Thin `egui`/`eframe` shell: `state.rs` (`UiState`, serializable), `menu_catalog.rs` (631 Photoshop menu items $\to$ command IDs), `menus.rs`, `canvas.rs` (viewport, overlays, GPU/CPU presentation), `panels.rs` & `dock.rs`, `dialogs.rs` & `filter_dialog.rs` (schema-driven filter previews), `theme.rs` (`Tokens`), `i18n.rs` (`tl!` macro), `control.rs` (TCP JSON control server). |
 | `photocraft-automation` | `crates/automation/src/lib.rs` | `PhotocraftMcp` (`rmcp` MCP server), `Headless` session host, `rpc.rs` (`photocraft-cli serve` JSON-lines server), `BridgeClient` (forwards MCP calls to a live GUI `--control` port), `AuthorizedWorkspace` (`cap-std` sandboxed file roots). |
-| `photocraft-testkit` | `crates/testkit/src/lib.rs` | Shared test builders, image diffing helpers, and synthetic fixture generators (`dev-dependency` only). |
+| `photocraft-testkit` | `crates/testkit/src/lib.rs` | Shared test & benchmark utilities: `gpu::gpu_lock()` (process-wide mutex serializing `wgpu`/`egui_kittest` GPU harnesses so WARP/Mesa/Vulkan drivers don't fault under multi-threaded `cargo test`) and `perf` (`RssSampler`, `process_peak_rss_bytes`, nearest-rank `Summary`, and `--json` benchmark report writers consumed by `cargo xtask perf`). |
 
 ---
 
