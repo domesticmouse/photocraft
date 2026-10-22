@@ -11,7 +11,11 @@ description: >-
 
 # Running, Driving & Debugging PhotoCraft
 
-PhotoCraft ships four entry points from the same workspace: the native desktop GUI (`apps/photocraft`), the headless CLI and MCP server (`apps/photocraft-cli`), and the WebAssembly browser application (`apps/photocraft-web` + `apps/photocraft-web-boot`).
+PhotoCraft is a multi-crate Cargo workspace with multiple binary packages (`photocraft`, `photocraft-cli`, `xtask`), so always pass `-p <package>` to `cargo run` or `cargo build` to select the target binary:
+- `photocraft` (`apps/photocraft`) — native desktop egui/wgpu GUI app
+- `photocraft-cli` (`apps/photocraft-cli`) — headless CLI, persistent JSON-lines server (`serve`), and MCP server (`mcp`)
+- `photocraft-web` + `photocraft-web-boot` (`apps/photocraft-web*`) — WebAssembly browser application
+- `xtask` (`xtask`) — workspace build, test, parity, and corpus runner (`cargo xtask ...`)
 
 ---
 
@@ -92,18 +96,47 @@ cargo run -p photocraft-ui-egui --example snapshot
 ```
 
 ### MCP Server (`rmcp` over stdio)
-- **Headless MCP:**
+
+- **Headless MCP (in-process `Session`, no window):**
   ```sh
   cargo run --release -p photocraft-cli -- mcp \
     --automation-read-root "$PWD/work" \
     --automation-write-root "$PWD/work"
   ```
-- **Bridged to a live desktop window:**
-  ```sh
-  cargo run --release -p photocraft-cli -- mcp \
-    --bridge 127.0.0.1:7878 \
-    --control-token-file .private/control.token
-  ```
+- **Bridged MCP (live desktop egui UI + MCP server):**
+  1. Launch the desktop app with `--control`, `--control-token-file`, and the `--automation-*-root` flags (in bridge mode, filesystem roots must be configured on the desktop `photocraft` process rather than on the bridging CLI; if the token file does not exist, PhotoCraft creates it with a fresh 256-bit token and `0600` permissions):
+     ```sh
+     mkdir -p .private work
+     cargo run --release -p photocraft -- \
+       --control 7878 \
+       --control-token-file "$PWD/.private/control.token" \
+       --automation-read-root "$PWD/work" \
+       --automation-write-root "$PWD/work"
+     ```
+  2. Start the MCP bridge pointing at the desktop app's loopback port and token file:
+     ```sh
+     cargo run --release -p photocraft-cli -- mcp \
+       --bridge 127.0.0.1:7878 \
+       --control-token-file "$PWD/.private/control.token"
+     ```
+  3. For MCP client configs (`mcpServers`), build `cargo build --release -p photocraft -p photocraft-cli` once and invoke the compiled `target/release/photocraft-cli` binary directly so stdio startup doesn't wait on Cargo:
+     ```json
+     {
+       "mcpServers": {
+         "photocraft": {
+           "command": "/abs/path/to/photocraft/target/release/photocraft-cli",
+           "args": [
+             "mcp",
+             "--bridge",
+             "127.0.0.1:7878",
+             "--control-token-file",
+             "/abs/path/to/photocraft/.private/control.token"
+           ]
+         }
+       }
+     }
+     ```
+  - **Bridge vs. Headless tool availability:** `ui_*` tools (`ui_inspect`, `ui_set`, `ui_pointer`, `ui_menu_invoke`, `ui_screenshot`) and `control_call` work **only in bridge mode** (driving the live window). `doc_select` and `doc_close` work **only in headless mode**. Engine/document tools (`command_run`, `command_list`, `doc_new`, `doc_open`, `doc_save`, `doc_inspect`, `jobs_list`, etc.) work in both.
 
 ---
 
